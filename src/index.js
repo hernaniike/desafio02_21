@@ -10,19 +10,64 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers;
+  const userFound = users.find((user) => user.username === username)
+  if(userFound) {
+    request.user = userFound
+    request.todo = userFound.todo
+    return next()
+  }
+  return response.status(404).json({error: 'User not found!'})
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const {user, todo} = request
+
+  if(user.pro) {
+    return next()
+  }
+  if(!user.pro && (Object.keys(user.todos).length < 10) ) {
+    return next()
+  }
+  return response.status(403).json({error: "Todo limit, get the unlimited PRO!"})
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
-}
+  const {username} = request.headers;
+  const {id} = request.params;
+  const {user} = request;
+  
+  const userFound = users.find((user) => user.username === username)
+
+  if(!userFound) {
+    return response.status(404).json({error: "User not Found!"})
+  }
+
+  if(!validate(id) ) {
+    return response.status(400).json({error: "This todo id is not allowed!"})
+  }
+
+  const todo = userFound.todos.find((todo => todo.id === id))
+  if(todo === undefined) {
+    return response.status(404).json({error: "There are no todos!"})
+  }
+  if(!todo) {
+    return response.status(404)
+  }
+
+  request.user = userFound
+  request.todo = todo
+  return next()   
+  };
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params
+  const userExists = users.find((user) => user.id === id)
+  if(!userExists) {
+    return response.status(404).json({error: "User not found!"})
+  }
+  request.user = userExists;
+  return next()
 }
 
 app.post('/users', (request, response) => {
